@@ -1,0 +1,41 @@
+﻿@model List<Inklusive.Models.User>
+@{
+    ViewData["Title"] = "GetAllUsers";
+}
+
+<h2>All Users</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Id</td>
+                <td>@user.Username</td>
+                <td>@user.Email</td>
+                <td>@user.Role.Name</td>
+                <td>
+                    <a href="@Url.Action("MyInfo", "User", new { id = user.Id })" class="btn btn-info">View</a>
+                    <a href="javascript:void(0);" class="btn btn-danger" onclick="deleteUser(@user.Id)">Delete</a>
+                    @{
+                        if(user.Role.Name == "Admin")
+                        {
+                            <a href="@Url.Action("EditAdminInfo", "User", new { id = user.Id })" class="btn btn-warning">Edit</a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-warning" href="@Url.Action("CreateUser","User")">Create New User </a>
