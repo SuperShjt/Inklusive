@@ -1,0 +1,45 @@
+﻿@model List<Inklusive.Models.ProfileUpdate>
+@{
+    ViewData["Title"] = "ShowAllRequests";
+}
+
+<h1>ShowAllRequests</h1>
+@{
+    if (Model == null)
+    {
+        <div class="container-fluid">
+            <span class="text-primary">NO Requests Yet</span>
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Updated Field</th>
+                    <th>Date Requested</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @foreach (var update in Model)
+                {
+                    <tr>
+                        <td>@update.User.Username</td>
+                        <td>UserName: @update.UpdatedField</td>
+                        <td>@update.DateRequested</td>
+                        <td>
+                            <a href="javascript:void(0);" class="btn btn-success" onclick="approveUser(@update.Id)">Approve</a>
+                        </td>
+                    </tr>
+                }
+
+
+
+
+            </tbody>
+        </table>
+    }
+}
