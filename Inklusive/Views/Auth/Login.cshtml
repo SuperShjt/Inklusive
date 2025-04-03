@@ -1,0 +1,33 @@
+﻿@model Inklusive.Models.User
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["Title"] = "Login";
+}
+@{
+    if (ViewBag.Error != null)
+    {
+        <p style="color:red">@ViewBag.Error</p>
+    }
+}
+<div class="myContainer">
+    <form asp-action="Login" method="post">
+        <div data-mdb-input-init class="form-outline mb-4">
+            <input type="email" id="form2Example1" class="form-control" name="email" required />
+            <label class="form-label" for="form2Example1">Email address</label>
+        </div>
+
+
+        <div data-mdb-input-init class="form-outline mb-4">
+            <input type="password" id="form2Example2" class="form-control" name="password" required />
+            <label class="form-label" for="form2Example2">Password</label>
+        </div>
+
+        <button data-mdb-ripple-init type="submit" class="btn btn-primary btn-block mb-4" style="width:100%">Sign in</button>
+        <div class="text-center">
+            <p>Not a member? <a href="/Auth/Register">Register</a></p>
+        </div>
+    </form>
+
+</div>

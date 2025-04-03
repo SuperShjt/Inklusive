@@ -3,13 +3,13 @@ using Inklusive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using System.Text;
+
 using Inklusive.Helper;
 using Inklusive.Services;
 
 using Microsoft.AspNetCore.Authorization;
 using Inklusive.DTO;
-using System.Threading.Tasks;
+
 
 namespace Inklusive.Controllers
 {
@@ -24,82 +24,6 @@ namespace Inklusive.Controllers
             _context = context;
             _jwtHelper = jwtHelper;
         }
-
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Register(User user)
-        {
-            if (user.RoleId == 3)
-            {
-                string defaultpassword = UserService.GenerateRandomPassword();
-                user.PasswordHash = UserService.HashPassword(defaultpassword);
-                user.isFirstLogin = true;
-
-                UserService.SendEmail(user.Email, "Your Account Details",
-                $"Hello {user.Username},\n\nYour account has been created.\nYour default password is: {defaultpassword}\n\nPlease log in and change it immediately.\n\nYour" +
-                $"Email is  {user.Email}");
-            }
-            else
-            {
-                user.PasswordHash = UserService.HashPassword(user.PasswordHash);
-            }
-
-            if (ModelState.IsValid)
-            {
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    Console.WriteLine(error.ErrorMessage);
-                }
-                return View(user);
-            }
-
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Login");
-        }
-
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
-        {
-            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
-            if (user != null && UserService.VerifyPassword(user.PasswordHash, password))
-            {
-
-                if (user.isFirstLogin)
-                {
-                    var tmp = _jwtHelper.GenerateToken(user);
-                    Response.Cookies.Append("AuthToken", tmp, new CookieOptions { HttpOnly = true });
-
-                    return RedirectToAction("ChangePassword");
-                }
-                else
-                {
-
-                    // Console.WriteLine(user.Role.Name);
-                    var token = _jwtHelper.GenerateToken(user);
-
-                    Response.Cookies.Append("AuthToken", token, new CookieOptions { HttpOnly = true });
-
-                    if (user.Role.Name == "Employee") return RedirectToAction("EmployeeHome", "Home");
-                    else return RedirectToAction("AdminHome", "Home");
-                }
-            }
-
-            ViewBag.Error = "Invalid email or password.";
-            return View();
-        }
-
-
         public async Task<IActionResult> UserInfoAsync()
         {
             var token = Request.Cookies["AuthToken"];
@@ -158,14 +82,14 @@ namespace Inklusive.Controllers
             var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
-                return RedirectToAction("Login");
+                return RedirectToAction("Login","Auth");
 
             user.PasswordHash = UserService.HashPassword(newPassword);
             user.isFirstLogin = false;
             await _context.SaveChangesAsync();
 
             var newToken = _jwtHelper.GenerateToken(user);
-            return RedirectToAction("Login");
+            return RedirectToAction("Login","Auth");
         }
 
 
@@ -183,7 +107,7 @@ namespace Inklusive.Controllers
                 user.PasswordHash = UserService.HashPassword(defaultpassword);
                 user.isFirstLogin = true;
 
-                UserService.SendEmail(user.Email, "Your Account Details",
+                EmailService.SendEmail(user.Email, "Your Account Details",
                 $"Hello {user.Username},\n\nYour account has been created.\nYour default password is: {defaultpassword}\n\nPlease log in and change it immediately.\n\nYour" +
                 $"Email is  {user.Email}");
             }
@@ -258,7 +182,7 @@ namespace Inklusive.Controllers
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
-            await UserService.SendEmailAsync(user.Email, "Your profile update was approved!", "Your profile changes have been approved by the admin.");
+            await EmailService.SendEmailAsync(user.Email, "Your profile update was approved!", "Your profile changes have been approved by the admin.");
 
             return Ok("Profile update approved successfully.");
         }
@@ -296,30 +220,6 @@ namespace Inklusive.Controllers
 
             return Ok("Profile update requested. Your changes will be visible once approved.");
         }
-
-        [Authorize(Roles ="Super Admin,Admin")]
-        public IActionResult EditAdminOwnInfo()
-        {
-            return View();
-        }
-        [HttpPut]
-        public async Task<IActionResult> EditAdminOwnInfo([FromBody] AdminProfileUpdateModel updateModel)
-        {
-            var token = Request.Cookies["AuthToken"];
-            var claims = _jwtHelper.ValidateToken(token);
-            var userIdClaim = claims.FirstOrDefault(c => c.Type == "UserId");
-            var userId = Convert.ToInt32(userIdClaim.Value);
-            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
-
-            user.Username = updateModel.NewUsername;
-            user.Email = updateModel.NewEmail;
-
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-
-            return Ok("Your Info is Update successfully");
-        }
-
         [Authorize(Roles ="Super Admin")]
         public IActionResult EditAdminInfo(int id)
         {
